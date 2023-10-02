@@ -57,6 +57,18 @@ function askLibrary():Thenable<String|undefined> {
 		value: "*CURLIB"
 	});
 }
+function buildQuickPickListAndSelect(options:String[], which: String):any {
+const quickPickItems = options.map(item => {
+	if (item === which) {return { label: item, picked: true};}
+	else {return {label: item};}
+});
+}
+function askConfirm(confirmWhat:String):Thenable<string|undefined> {
+	return window.showQuickPick(['Yes','No'], {
+		placeHolder: 'Confirm or reject action',
+		title: confirmWhat.valueOf()
+	});
+}
 function askSrcf():Thenable<String|undefined> {
 	return window.showInputBox({
 		title: 'Source File',
@@ -74,12 +86,19 @@ function askMember():Thenable<String|undefined> {
 	});
 }
 
-function runGitCommand(connection:any, lib:String, command:String):Thenable<CommandResult|undefined> {
+function runGitCommandNeedsLib(connection:any, lib:String, command:String):Thenable<CommandResult|undefined> {
 	return connection?.runCommand({
 		environment: `ile`,
 		command: `${command} lib(${lib})`
 	});
 
+}
+
+function runGitCommandNoLib(connection:any, command:String):Thenable<CommandResult|undefined> {
+	return connection?.runCommand({
+		environment: `ile`,
+		command: command
+	});
 }
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -105,11 +124,6 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		var lib:String|undefined = undefined;
 		if (node === undefined) {
-			/*lib = await window.showInputBox({
-				title: 'Library',
-				placeHolder: 'Enter library',
-				value: "*CURLIB"
-			});*/
 			lib = await askLibrary();
 		} else {
 			lib = getLibrary(node);
@@ -120,41 +134,41 @@ export function activate(context: vscode.ExtensionContext) {
 		if (lib.length === 0) {
 			return await vscode.window.showErrorMessage("Must provide a library");
 		}
+		
+		let cmd:String;
+		if (node === undefined) {
+			
+			cmd =  `gitstatus info(*${pickResult})`;
+
+		} else {
+			switch(node.contextValue) {
+				case 'SPF': {
+					cmd = `gitstatus info(*${pickResult})`;
+					break;
+				}
+				case 'filter': {
+					cmd =`gitstatus info(*${pickResult})`;
+					break;
+				}
+				case 'member': {
+					cmd =  `gitstatus info(*${pickResult})`;
+					break;
+				}
+				default: {
+					cmd = 'gitstatus info(*info)';
+					lib = '*NONE';
+					break;
+				}
+			}
+		}
 		loadBase();
 		let instance = getInstance();
 		const connection = instance?.getConnection();
 		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
 		let result: String | undefined;
-		if (node === undefined) {
-			
-			const gitResult = await runGitCommand(connection, lib, `gitstatus info(*${pickResult})`);
-			const header = "Git Status";
-			result = await reportResult(header, gitResult);
-
-		} else {
-			switch(node.contextValue) {
-				case 'SPF': {
-					result =await vscode.window.showInformationMessage(`Source Physical Lib: ${node.parent.library} File: ${node.file}`);
-					break;
-				}
-				case 'filter': {
-					const gitResult: CommandResult|undefined = await runGitCommand(connection, lib, `gitstatus info(*${pickResult})`);
-					const header = "Git Status";
-					result = await reportResult(header, gitResult);
-					break;
-				}
-				case 'member': {
-					const gitResult: CommandResult|undefined = await runGitCommand(connection, lib, `gitstatus info(*${pickResult})`);
-					const header = "Git Status";
-					result = await reportResult(header, gitResult);
-					break;
-				}
-				default: {
-					result = await vscode.window.showInformationMessage(`Type: ${node.contextValue}`);
-					break;
-				}
-			}
-		}
+		const gitResult = await runGitCommandNeedsLib(connection, lib, `gitstatus info(*${pickResult})`);
+		const header = "Git Status";
+		result = await reportResult(header, gitResult);
 	});
 	let nodeAdd = vscode.commands.registerCommand(`eradani.gitadd`, async (node) => {
 		let lib:String|undefined;
@@ -186,7 +200,8 @@ export function activate(context: vscode.ExtensionContext) {
 			lib = getLibrary(node);
 			switch(node.contextValue) {
 				case 'filter': {
-					cmd = `gitadd file(${lib}/*ALL) srcmbr(*ALL)`
+					cmd = `gitadd file(${lib}/*ALL) srcmbr(*ALL)`;
+					break;
 				}
 				
 				case 'SPF': {
@@ -211,18 +226,146 @@ export function activate(context: vscode.ExtensionContext) {
 		let instance = getInstance();
 		const connection = instance?.getConnection();
 		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
-		const gitResult: CommandResult|undefined = await connection?.runCommand({
-			environment: `ile`,
-			command : cmd
-		});
-		const header = "Git Status";
+		const gitResult: CommandResult|undefined = await runGitCommandNoLib(connection, cmd);
+		const header = "Git Add";
 		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
 		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
 		
 	});
+
+	let nodeSave = vscode.commands.registerCommand(`eradani.gitsave`, async (node) => {
+		let lib:String|undefined;
+		let srcf:String|undefined;
+		let member:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+			srcf = await askSrcf();
+			if (srcf === undefined || srcf.length === 0) {
+				return;
+			}
+			if (srcf.toUpperCase() === "*ALL") {
+				cmd = `gitsave file(${lib}/*ALL)`;
+			} else {
+				member = await askMember();
+				if (member === undefined || member.length === 0) {
+					return;
+				}
+				cmd =`gitsave file(${lib}/${srcf}) mbr(${member})`;
+			}
+			
+
+		} else {
+			lib = getLibrary(node);
+			switch(node.contextValue) {
+				case 'filter': {
+					cmd = `gitsave file(${lib}/*ALL) mbr(*ALL)`;
+					break;
+				}
+				
+				case 'SPF': {
+					srcf =getSrcf(node);
+					cmd = `gitsave file(${lib}/${srcf})`;
+					break;
+				}
+				case 'member': {
+					srcf = getSrcf(node);
+					member = node.member.name;
+					cmd = `gitsave file(${lib}/${srcf}) mbr(${member})`;
+					break;
+				}
+				default: {
+					result = await vscode.window.showInformationMessage(`Type: ${node.contextValue}`);
+					return;
+					break;
+				}
+			}
+		}
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNoLib(connection, cmd);
+		const header = "Git Save";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+		
+	});
+	let nodeCommit = vscode.commands.registerCommand(`eradani.gitcommit`, async (node) => {
+		let lib:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+		} else {
+			lib = getLibrary(node);
+		}
+		let message = await window.showInputBox({
+			title: 'Commit Message',
+			placeHolder: 'Enter commit message',
+			value:""
+	
+		});
+		if (message === undefined)
+		{
+			return;
+		}
+		if (message.length === 0) {
+			await window.showErrorMessage("Must provide a commit message");
+			return;
+		}
+		cmd = `gitcommit msg('${message}')`;
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNeedsLib(connection, lib, cmd);
+		const header = "Git Commit";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+
+	});
+	let nodePush = vscode.commands.registerCommand(`eradani.gitpush`, async (node) => {
+		let lib:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+		} else {
+			lib = getLibrary(node);
+		}
+		const confirm = await askConfirm("Confirm Push");
+
+		if (confirm !== 'Yes') {
+			return;
+		}
+		cmd = `gitpush setup(*no)`;
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNeedsLib(connection, lib, cmd);
+		const header = "Git Push";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+
+	});
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(nodeCmd);
 	context.subscriptions.push(nodeAdd);
+	context.subscriptions.push(nodeSave);
+	context.subscriptions.push(nodeCommit);
+	context.subscriptions.push(nodePush);
 }
 
 // This method is called when your extension is deactivated

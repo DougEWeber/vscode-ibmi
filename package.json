@@ -48,6 +48,16 @@
         "command": "eradani.gitdiff",
         "title": "Diff",
         "category": "Eradani iGit"
+      },
+      {
+        "command": "eradani.gitcommit",
+        "title": "Commit",
+        "category": "Eradani iGit"
+      },
+      {
+        "command": "eradani.gitpush",
+        "title": "Push",
+        "category": "Eradani iGit"
       }
     ],
     "submenus": [
@@ -86,6 +96,14 @@
         },
         {
           "command": "eradani.gitdiff",
+          "when" : "view == objectBrowser"
+        },
+        {
+          "command": "eradani.gitcommit",
+          "when" : "view == objectBrowser"
+        },
+        {
+          "command": "eradani.gitpush",
           "when" : "view == objectBrowser"
         }
       ]
