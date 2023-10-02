@@ -68,6 +68,11 @@
         "command": "eradani.gitpushnewbranch",
         "title": "Push New Branch",
         "category": "Eradani iGit"
+      },
+      {
+        "command": "eradani.gitnewbranch",
+        "title": "Create New Branch",
+        "category": "Eradani iGit"
       }
     ],
     "submenus": [
@@ -122,6 +127,10 @@
         },
         {
           "command": "eradani.gitpull",
+          "when" : "view == objectBrowser"
+        },
+        {
+          "command": "eradani.gitnewbranch",
           "when" : "view == objectBrowser"
         }
       ]
