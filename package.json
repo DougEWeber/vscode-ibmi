@@ -58,6 +58,16 @@
         "command": "eradani.gitpush",
         "title": "Push",
         "category": "Eradani iGit"
+      },
+      {
+        "command": "eradani.gitpull",
+        "title": "Pull",
+        "category": "Eradani iGit"
+      },
+      {
+        "command": "eradani.gitpushnewbranch",
+        "title": "Push New Branch",
+        "category": "Eradani iGit"
       }
     ],
     "submenus": [
@@ -104,6 +114,14 @@
         },
         {
           "command": "eradani.gitpush",
+          "when" : "view == objectBrowser"
+        },
+        {
+          "command": "eradani.gitpushnewbranch",
+          "when" : "view == objectBrowser"
+        },
+        {
+          "command": "eradani.gitpull",
           "when" : "view == objectBrowser"
         }
       ]

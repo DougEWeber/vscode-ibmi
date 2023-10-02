@@ -360,12 +360,72 @@ export function activate(context: vscode.ExtensionContext) {
 		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
 
 	});
+
+	let nodePushNewBranch = vscode.commands.registerCommand(`eradani.gitpushnewbranch`, async (node) => {
+		let lib:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+		} else {
+			lib = getLibrary(node);
+		}
+		const confirm = await askConfirm("Confirm Push New Branch");
+
+		if (confirm !== 'Yes') {
+			return;
+		}
+		cmd = `gitpush setup(*yes)`;
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNeedsLib(connection, lib, cmd);
+		const header = "Git Push";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+
+	});
+
+	let nodePull = vscode.commands.registerCommand(`eradani.gitpull`, async (node) => {
+		let lib:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+		} else {
+			lib = getLibrary(node);
+		}
+		const confirm = await askConfirm("Confirm Pull");
+
+		if (confirm !== 'Yes') {
+			return;
+		}
+		cmd = `gitpull `;
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNeedsLib(connection, lib, cmd);
+		const header = "Git Pull";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+
+	});
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(nodeCmd);
 	context.subscriptions.push(nodeAdd);
 	context.subscriptions.push(nodeSave);
 	context.subscriptions.push(nodeCommit);
 	context.subscriptions.push(nodePush);
+	context.subscriptions.push(nodePushNewBranch);
+	context.subscriptions.push(nodePull);
 }
 
 // This method is called when your extension is deactivated
