@@ -23,7 +23,8 @@ export function getInstance():Instance|undefined {
 }
 
 function getLibrary(node:any):String {
-	if (node.contextValue === 'filter') {
+	if (node.contextValue === 'filter' ||
+	node.contextValue == 'filter_readonly') {
 		return node.filter.library;
 	}
 	else {
@@ -31,10 +32,12 @@ function getLibrary(node:any):String {
 	}
 }
 function getSrcf(node:any):String {
-	if (node.contextValue === 'filter') {
+	if (node.contextValue === 'filter' ||
+		node.contextValue === 'filter_readonly') {
 		return '*ALL';
 	}
-	if (node.contextValue === 'SPF') {
+	if (node.contextValue === 'SPF' ||
+		node.contextValue === 'SPF_readonly') {
 		return node.sourceFile.name;
 	}
 	else {
@@ -83,6 +86,14 @@ function askMember():Thenable<String|undefined> {
 		placeHolder: 'Enter member name',
 		value:"*ALL"
 
+	});
+}
+
+function askGitLib():Thenable<String|undefined> {
+	return window.showInputBox({
+		title: "iGit Library",
+		placeHolder: "Enter iGit Library to check out to",
+		value:"*SAME"
 	});
 }
 
@@ -142,15 +153,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 		} else {
 			switch(node.contextValue) {
-				case 'SPF': {
+				case 'SPF': 
+				case 'SPF_readonly': {
 					cmd = `gitstatus info(*${pickResult})`;
 					break;
 				}
-				case 'filter': {
+				case 'filter':
+				case 'filter_readonly': {
 					cmd =`gitstatus info(*${pickResult})`;
 					break;
 				}
-				case 'member': {
+				case 'member': 
+				case 'member_readonly': {
 					cmd =  `gitstatus info(*${pickResult})`;
 					break;
 				}
@@ -199,17 +213,20 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			lib = getLibrary(node);
 			switch(node.contextValue) {
-				case 'filter': {
+				case 'filter': 
+				case 'filter_readonly': {
 					cmd = `gitadd file(${lib}/*ALL) srcmbr(*ALL)`;
 					break;
 				}
 				
-				case 'SPF': {
+				case 'SPF': 
+				case 'SPF_readonly': {
 					srcf =getSrcf(node);
 					cmd = `gitadd file(${lib}/${srcf})`;
 					break;
 				}
-				case 'member': {
+				case 'member': 
+				case 'member_readonly': {
 					srcf = getSrcf(node);
 					member = node.member.name;
 					cmd = `gitadd file(${lib}/${srcf}) srcmbr(${member})`;
@@ -262,17 +279,20 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			lib = getLibrary(node);
 			switch(node.contextValue) {
-				case 'filter': {
+				case 'filter': 
+				case 'filter_readonly': {
 					cmd = `gitsave file(${lib}/*ALL) mbr(*ALL)`;
 					break;
 				}
 				
-				case 'SPF': {
+				case 'SPF': 
+				case 'SPF_readonly':{
 					srcf =getSrcf(node);
 					cmd = `gitsave file(${lib}/${srcf})`;
 					break;
 				}
-				case 'member': {
+				case 'member': 
+				case 'member_readonly':{
 					srcf = getSrcf(node);
 					member = node.member.name;
 					cmd = `gitsave file(${lib}/${srcf}) mbr(${member})`;
@@ -456,6 +476,309 @@ export function activate(context: vscode.ExtensionContext) {
 		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
 
 	});
+
+
+	let nodeRemove = vscode.commands.registerCommand(`eradani.gitremove`, async (node) => {
+		let lib:String|undefined;
+		let srcf:String|undefined;
+		let member:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+			srcf = await askSrcf();
+			if (srcf === undefined || srcf.length === 0) {
+				return;
+			}
+		
+			member = await askMember();
+			if (member === undefined || member.length === 0) {
+				return;
+			}
+			cmd =`gitrm file(${lib}/${srcf}) srcmbr(${member})`;
+			
+			
+
+		} else {
+			lib = getLibrary(node);
+			switch(node.contextValue) {
+				case 'filter': {
+					srcf = await askSrcf();
+					if (srcf === undefined || srcf.length === 0) {
+						return;
+					}
+				
+					member = await askMember();
+					if (member === undefined || member.length === 0) {
+						return;
+					}
+					cmd =`gitrm file(${lib}/${srcf}) srcmbr(${member})`;
+					break;
+				}
+				
+				case 'SPF': {
+					srcf =getSrcf(node);
+					member = await askMember();
+					if (member === undefined || member.length === 0) {
+						return;
+					}
+					cmd =`gitrm file(${lib}/${srcf}) srcmbr(${member})`;
+					break;
+					break;
+				}
+				case 'member': {
+					srcf = getSrcf(node);
+					member = node.member.name;
+					cmd = `gitrm file(${lib}/${srcf}) srcmbr(${member})`;
+					break;
+				}
+				default: {
+					result = await vscode.window.showInformationMessage(`Type: ${node.contextValue} not a source.`);
+					return;
+					break;
+				}
+			}
+		}
+		if ((await askConfirm(`Remove ${lib}/${srcf} mbr(${member})`)) === 'No') {
+			return;
+		}
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNoLib(connection, cmd);
+		const header = "Git Remove";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+		
+	});
+
+
+	let nodeUndo = vscode.commands.registerCommand(`eradani.gitundo`, async (node) => {
+		let lib:String|undefined;
+		let srcf:String|undefined;
+		let member:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+			srcf = await askSrcf();
+			if (srcf === undefined || srcf.length === 0) {
+				return;
+			}
+		
+			member = await askMember();
+			if (member === undefined || member.length === 0) {
+				return;
+			}
+			cmd =`gitundo file(${lib}/${srcf}) srcmbr(${member})`;
+			
+			
+
+		} else {
+			lib = getLibrary(node);
+			switch(node.contextValue) {
+				case 'filter': 
+				case 'filter_readonly': {
+					srcf = await askSrcf();
+					if (srcf === undefined || srcf.length === 0) {
+						return;
+					}
+				
+					member = await askMember();
+					if (member === undefined || member.length === 0) {
+						return;
+					}
+					cmd =`gitundo file(${lib}/${srcf}) srcmbr(${member})`;
+					break;
+				}
+				
+				case 'SPF': 
+				case 'SPF_readonly': {
+					srcf =getSrcf(node);
+					member = await askMember();
+					if (member === undefined || member.length === 0) {
+						return;
+					}
+					cmd =`gitundo file(${lib}/${srcf}) srcmbr(${member})`;
+					break;
+					break;
+				}
+				case 'member': 
+				case 'member_readon;y': {
+					srcf = getSrcf(node);
+					member = node.member.name;
+					cmd = `gitundo file(${lib}/${srcf}) srcmbr(${member})`;
+					break;
+				}
+				default: {
+					result = await vscode.window.showInformationMessage(`Type: ${node.contextValue} not a source.`);
+					return;
+					break;
+				}
+			}
+		}
+		let whichAct = await window.showQuickPick(['Staged','Unstaged', 'Removed', 'Retyped'], {
+			placeHolder: 'Select what action to undo',
+			title: 'Select action to undo'
+		});
+		if (whichAct === undefined) {
+			return;
+		}
+		if ((await askConfirm(`Undo of ${whichAct} on  ${lib}/${srcf} mbr(${member})`)) === 'No') {
+			return;
+		}
+		cmd = cmd + ` what(*${whichAct})`;
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNoLib(connection, cmd);
+		const header = "Git Remove";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+		
+	});
+
+	let nodeSwitch = vscode.commands.registerCommand(`eradani.gitswitch`, async (node) => {
+		let lib:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+		} else {
+			lib = getLibrary(node);
+		}
+		let name = await window.showInputBox({
+			title: 'Branch',
+			placeHolder: 'Enter branch name',
+			value:""
+	
+		});
+		if (name === undefined)
+		{
+			return;
+		}
+		if (name.length === 0) {
+			await window.showErrorMessage("Must provide a commit message");
+			return;
+		}
+		cmd = `gitswitch name(${name})`;
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNeedsLib(connection, lib, cmd);
+		const header = "Git Switch";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result = await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+
+	});
+
+	let nodeCheckout = vscode.commands.registerCommand(`eradani.gitcheckout`, async (node) => {
+		let lib:String|undefined;
+		let srcf:String|undefined;
+		let member:String|undefined;
+		let result: String | undefined;
+		let cmd: String;
+		if (node === undefined) {
+			lib = await askLibrary();
+			if (lib === undefined || lib.length ===0) {
+				return;
+			}
+			srcf = await askSrcf();
+			if (srcf === undefined || srcf.length === 0) {
+				return;
+			}
+			if (srcf.toUpperCase() === "*ALL") {
+				cmd = `gitadd file(${lib}/*ALL)`;
+			} else {
+				member = await askMember();
+				if (member === undefined || member.length === 0) {
+					return;
+				}
+				cmd =`gitadd file(${lib}/${srcf}) srcmbr(${member})`;
+			}
+			
+
+		} else {
+			lib = getLibrary(node);
+			switch(node.contextValue) {
+				case 'filter': 
+				case 'filter_readonly': {
+					srcf = await askSrcf();
+					if (srcf === undefined) {
+						return;
+					}
+					if (srcf.length === 0) {
+						return;
+					}
+					member = await askMember();
+					if (member === undefined) {
+						return;
+					}
+					if (member.length === 0) {
+						return;
+					}
+					break;
+				}
+				
+				case 'SPF': 
+				case 'SPF_readonly':{
+					srcf = getSrcf(node);
+					member = await askMember();
+					if (member === undefined) {
+						return;
+					}
+					if (member.length === 0) {
+						return;
+					}
+					break;
+				}
+				case 'member':
+				case 'member_readonly': {
+					srcf = getSrcf(node);
+					member = node.member.name;
+					cmd = `gitadd file(${lib}/${srcf}) srcmbr(${member})`;
+					break;
+				}
+				default: {
+					result = await vscode.window.showInformationMessage(`Type: ${node.contextValue}`);
+					return;
+					break;
+				}
+			}
+		}
+		
+		let gitlib = await askGitLib();
+		if (gitlib === undefined) {
+			return;
+		}
+		if (gitlib.length === 0) {
+			return;
+		}
+		cmd = `gitchkout file(${lib}/${srcf}) mbr(${member}) lib(${gitlib})`;
+		loadBase();
+		let instance = getInstance();
+		const connection = instance?.getConnection();
+		const ext = vscode.extensions.getExtension<CodeForIBMi>('halcyontechltd.code-for-ibmi');
+		const gitResult: CommandResult|undefined = await runGitCommandNoLib(connection, cmd);
+		const header = "Git Add";
+		const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
+		result =await vscode.window.showInformationMessage(header, options, ...["Ok"]);
+		
+	});
+	
+
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(nodeCmd);
 	context.subscriptions.push(nodeAdd);
@@ -465,6 +788,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(nodePushNewBranch);
 	context.subscriptions.push(nodePull);
 	context.subscriptions.push(nodeNewBranch);
+	context.subscriptions.push(nodeRemove);
+	context.subscriptions.push(nodeUndo);
+	context.subscriptions.push(nodeSwitch);
+	context.subscriptions.push(nodeCheckout);
+		
 }
 
 // This method is called when your extension is deactivated

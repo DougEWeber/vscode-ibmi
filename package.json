@@ -73,6 +73,16 @@
         "command": "eradani.gitnewbranch",
         "title": "Create New Branch",
         "category": "Eradani iGit"
+      },
+      {
+        "command": "eradani.gitswitch",
+        "title": "Switch to a branch",
+        "category": "Eradani iGit"
+      },
+      {
+        "command": "eradani.gitcheckout",
+        "title": "Check out member from repo",
+        "category": "Eradani iGit"
       }
     ],
     "submenus": [
@@ -132,6 +142,14 @@
         {
           "command": "eradani.gitnewbranch",
           "when" : "view == objectBrowser"
+        },
+        {
+          "command": "eradani.gitswitch",
+          "when": "view == objectBrowser"
+        },
+        {
+          "command": "eradani.gitcheckout",
+          "when": "view == objectBrowser"
         }
       ]
     }
