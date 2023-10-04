@@ -53,11 +53,11 @@ function reportResult(header:String, gitResult:CommandResult) {
 	return vscode.window.showInformationMessage(header.valueOf(), options, ...["Ok"]);
 
 }
-function askLibrary():Thenable<String|undefined> {
+function askLibrary(dflt:string):Thenable<String|undefined> {
 	return window.showInputBox({
 		title: 'Library',
 		placeHolder: 'Enter library',
-		value: "*CURLIB"
+		value: dflt
 	});
 }
 function buildQuickPickListAndSelect(options:String[], which: String):any {
@@ -72,19 +72,19 @@ function askConfirm(confirmWhat:String):Thenable<string|undefined> {
 		title: confirmWhat.valueOf()
 	});
 }
-function askSrcf():Thenable<String|undefined> {
+function askSrcf(dflt:string):Thenable<String|undefined> {
 	return window.showInputBox({
 		title: 'Source File',
 		placeHolder: 'Enter source file',
-		value: "*ALL"
+		value: dflt
 	});
 }
 
-function askMember():Thenable<String|undefined> {
+function askMember(dflt:string):Thenable<String|undefined> {
 	return window.showInputBox({
 		title: 'Member',
 		placeHolder: 'Enter member name',
-		value:"*ALL"
+		value: dflt
 
 	});
 }
@@ -135,7 +135,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		var lib:String|undefined = undefined;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 		} else {
 			lib = getLibrary(node);
 		}
@@ -191,18 +191,18 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
-			srcf = await askSrcf();
+			srcf = await askSrcf("*ALL");
 			if (srcf === undefined || srcf.length === 0) {
 				return;
 			}
 			if (srcf.toUpperCase() === "*ALL") {
 				cmd = `gitadd file(${lib}/*ALL)`;
 			} else {
-				member = await askMember();
+				member = await askMember("*ALL");
 				if (member === undefined || member.length === 0) {
 					return;
 				}
@@ -257,18 +257,18 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
-			srcf = await askSrcf();
+			srcf = await askSrcf("*ALL");
 			if (srcf === undefined || srcf.length === 0) {
 				return;
 			}
 			if (srcf.toUpperCase() === "*ALL") {
 				cmd = `gitsave file(${lib}/*ALL)`;
 			} else {
-				member = await askMember();
+				member = await askMember("*ALL");
 				if (member === undefined || member.length === 0) {
 					return;
 				}
@@ -320,7 +320,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
@@ -357,7 +357,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
@@ -386,7 +386,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
@@ -415,7 +415,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
@@ -444,7 +444,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
@@ -485,16 +485,16 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
-			srcf = await askSrcf();
+			srcf = await askSrcf("");
 			if (srcf === undefined || srcf.length === 0) {
 				return;
 			}
 		
-			member = await askMember();
+			member = await askMember("");
 			if (member === undefined || member.length === 0) {
 				return;
 			}
@@ -506,12 +506,12 @@ export function activate(context: vscode.ExtensionContext) {
 			lib = getLibrary(node);
 			switch(node.contextValue) {
 				case 'filter': {
-					srcf = await askSrcf();
+					srcf = await askSrcf("");
 					if (srcf === undefined || srcf.length === 0) {
 						return;
 					}
 				
-					member = await askMember();
+					member = await askMember("");
 					if (member === undefined || member.length === 0) {
 						return;
 					}
@@ -521,7 +521,7 @@ export function activate(context: vscode.ExtensionContext) {
 				
 				case 'SPF': {
 					srcf =getSrcf(node);
-					member = await askMember();
+					member = await askMember("");
 					if (member === undefined || member.length === 0) {
 						return;
 					}
@@ -564,16 +564,16 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
-			srcf = await askSrcf();
+			srcf = await askSrcf("");
 			if (srcf === undefined || srcf.length === 0) {
 				return;
 			}
 		
-			member = await askMember();
+			member = await askMember("");
 			if (member === undefined || member.length === 0) {
 				return;
 			}
@@ -586,12 +586,12 @@ export function activate(context: vscode.ExtensionContext) {
 			switch(node.contextValue) {
 				case 'filter': 
 				case 'filter_readonly': {
-					srcf = await askSrcf();
+					srcf = await askSrcf("");
 					if (srcf === undefined || srcf.length === 0) {
 						return;
 					}
 				
-					member = await askMember();
+					member = await askMember("");
 					if (member === undefined || member.length === 0) {
 						return;
 					}
@@ -602,7 +602,7 @@ export function activate(context: vscode.ExtensionContext) {
 				case 'SPF': 
 				case 'SPF_readonly': {
 					srcf =getSrcf(node);
-					member = await askMember();
+					member = await askMember("");
 					if (member === undefined || member.length === 0) {
 						return;
 					}
@@ -651,7 +651,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
@@ -691,18 +691,18 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		let cmd: String;
 		if (node === undefined) {
-			lib = await askLibrary();
+			lib = await askLibrary("*CURLIB");
 			if (lib === undefined || lib.length ===0) {
 				return;
 			}
-			srcf = await askSrcf();
+			srcf = await askSrcf("");
 			if (srcf === undefined || srcf.length === 0) {
 				return;
 			}
 			if (srcf.toUpperCase() === "*ALL") {
 				cmd = `gitadd file(${lib}/*ALL)`;
 			} else {
-				member = await askMember();
+				member = await askMember("");
 				if (member === undefined || member.length === 0) {
 					return;
 				}
@@ -715,14 +715,14 @@ export function activate(context: vscode.ExtensionContext) {
 			switch(node.contextValue) {
 				case 'filter': 
 				case 'filter_readonly': {
-					srcf = await askSrcf();
+					srcf = await askSrcf("");
 					if (srcf === undefined) {
 						return;
 					}
 					if (srcf.length === 0) {
 						return;
 					}
-					member = await askMember();
+					member = await askMember("");
 					if (member === undefined) {
 						return;
 					}
@@ -735,7 +735,7 @@ export function activate(context: vscode.ExtensionContext) {
 				case 'SPF': 
 				case 'SPF_readonly':{
 					srcf = getSrcf(node);
-					member = await askMember();
+					member = await askMember("");
 					if (member === undefined) {
 						return;
 					}
