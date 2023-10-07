@@ -16,14 +16,13 @@
       {
         "command": "eradani.gitStatus",
         "title": "Status",
-        "category": "Eradani iGit" 
+        "category": "Eradani iGit"
       },
       {
         "command": "eradani.gitcheckout",
         "title": "Checkout",
         "category": "Eradani iGit"
       },
-      
       {
         "command": "eradani.gitsave",
         "title": "Save",
@@ -87,61 +86,61 @@
     ],
     "submenus": [
       {
-        "id" : "eradani.igit",
-        "label" : "IGit"
+        "id": "eradani.igit",
+        "label": "IGit"
       }
     ],
     "menus": {
       "view/item/context": [
         {
           "submenu": "eradani.igit",
-          "group" : "yourext@1"
+          "group": "yourext@1"
         }
       ],
       "eradani.igit": [
         {
           "command": "eradani.gitStatus",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitsave",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitadd",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitremove",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitundo",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitdiff",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitcommit",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitpush",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitpushnewbranch",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitpull",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitnewbranch",
-          "when" : "view == objectBrowser"
+          "when": "view == objectBrowser"
         },
         {
           "command": "eradani.gitswitch",
@@ -153,7 +152,6 @@
         }
       ]
     }
-  
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -164,16 +162,22 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.81.0",
+    "@halcyontech/vscode-ibmi-types": "^2.4.0",
     "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.1",
+    "@types/mocha": "^10.0.2",
     "@types/node": "20.2.5",
+    "@types/ssh2-streams": "^0.1.10",
+    "@types/vscode": "^1.81.0",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@typescript-eslint/parser": "^5.59.8",
+    "@vscode/test-electron": "^2.3.2",
     "eslint": "^8.41.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
-    "typescript": "^5.1.3",
-    "@vscode/test-electron": "^2.3.2"
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "node-ssh": "^13.1.0",
+    "ssh2-streams": "^0.4.10"
   }
 }

@@ -24,7 +24,7 @@ export function getInstance():Instance|undefined {
 
 function getLibrary(node:any):String {
 	if (node.contextValue === 'filter' ||
-	node.contextValue == 'filter_readonly') {
+	node.contextValue === 'filter_readonly') {
 		return node.filter.library;
 	}
 	else {
@@ -48,7 +48,7 @@ function stripMessageIds(msg:String):String {
 	// read line by line and remove up to : if GIT1004 or GIT1003 is the start
 return "";
 }
-function reportResult(header:String, gitResult:CommandResult) {
+function reportResult(header:String, gitResult:CommandResult|undefined) {
 	const options: vscode.MessageOptions = {detail: `${gitResult?.stdout} \n ${gitResult?.stderr}`, modal: true};
 	return vscode.window.showInformationMessage(header.valueOf(), options, ...["Ok"]);
 
@@ -182,7 +182,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let result: String | undefined;
 		const gitResult = await runGitCommandNeedsLib(connection, lib, `gitstatus info(*${pickResult})`);
 		const header = "Git Status";
-		result = await reportResult(header, gitResult);
+		await reportResult(header, gitResult);
 	});
 	let nodeAdd = vscode.commands.registerCommand(`eradani.gitadd`, async (node) => {
 		let lib:String|undefined;
